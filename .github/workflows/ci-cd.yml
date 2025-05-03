@@ -1,0 +1,40 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-test-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: pip install -r app/requirements.txt
+
+    - name: Run tests
+      run: |
+        pip install pytest
+        pytest tests/
+
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Build Docker image
+      run: docker build -t gopireddy456/myapp:${{ github.sha }} .
+
+    - name: Push Docker image
+      run: |
+        docker tag gopireddy456/myapp:${{ github.sha }} gopireddy456/myapp:latest
+        docker push gopireddy456/myapp:${{ github.sha }}
+        docker push gopireddy456/myapp:latest
